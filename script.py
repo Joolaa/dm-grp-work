@@ -6,7 +6,9 @@ students = f.parse_students()
 def process_students(students):
     processed_students = []
     for student in students:
-        record = [{'grade': attempt.grade, 'id': attempt.course.id_num}
+        record = [{'grade': int(attempt.grade),
+                   'id': str(attempt.course.id_num),
+                   'date': str(attempt.date)}
                   for attempt
                   in student.attempts]
         processed_students.append(record)
@@ -70,3 +72,12 @@ def confidence_for_intro_to_adv(simple_students, intro_grade, adv_grade):
 # 4 0 0.08060453400503778
 # 4 2 0.19395465994962216
 # 4 4 0.6498740554156172
+
+#count how many times a student has the intro on record
+#for datum in simple_data:
+#    if (in_sets_test(datum, ["581325"], [0, 2, 4])):
+#        count = 0
+#        for courses in datum:
+#            if (str(courses['id']) == "581325"):
+#                count += 1
+#        print(count)
