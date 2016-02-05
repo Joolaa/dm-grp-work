@@ -56,11 +56,17 @@ def confidence_for_intro_to_adv(simple_students, intro_grade, adv_grade):
                                                   [adv_grade])
     return alg.confidence(simple_data, intro_with_grade, adv_with_grade)
 
-#confidence_for_intro_to_adv(simple_data, 4, 4)
-#0.6498740554156172
+#for a in [0, 2, 4]:
+#    for b in [0, 2, 4]:
+#        print(a, b, confidence_for_intro_to_adv(simple_data, a, b))
+# 0 0 0.4107142857142857
+# 0 2 0.35714285714285715
+# 0 4 0.17857142857142858
 
-#confidence_for_intro_to_adv(simple_data, 2, 2)
-#0.477124183006536
+# 2 0 0.24183006535947713
+# 2 2 0.477124183006536
+# 2 4 0.2875816993464052
 
-#confidence_for_intro_to_adv(simple_data, 0, 0)
-#0.4107142857142857
+# 4 0 0.08060453400503778
+# 4 2 0.19395465994962216
+# 4 4 0.6498740554156172
