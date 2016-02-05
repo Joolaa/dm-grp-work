@@ -4,10 +4,33 @@ def support_count(x, data):
         count += (x <= set)
     return count
 
+#returns the number of transactions that satisfy
+#the given predicate
+def absolute_frequency(transactions, pred):
+    count = 0
+    for transaction in transactions:
+        if(pred(transaction)):
+            count += 1
+    return count
+
 
 def support(x, data):
     return support_count(x, data) / len(data)
 
+#returns the relative amount of transactions that
+#satisfy the given predicate
+def relative_frequency(transactions, pred):
+    set_support_count = absolute_frequency(transactions, pred) + 0.0
+    return set_support_count / len(transactions)
+
+#calculates the relative amount of transactions
+#that satisfy the association rule premise -> conclusion
+#premise and conclusion are both predicates
+def confidence(transactions, premise, conclusion):
+    union = lambda trnsc: premise(trnsc) and conclusion(trnsc)
+    rule_support_count = absolute_frequency(transactions, union) + 0.0
+    premise_support_count = absolute_frequency(transactions, premise)
+    return rule_support_count / premise_support_count
 
 def generate(lists):
     response = []
@@ -20,7 +43,7 @@ def generate(lists):
         b = tuple(x[0:-1])
         if b not in d.keys():
             d[b] = []
-        d[b].append(x[-1])
+            d[b].append(x[-1])
 
     for k in d.keys():
         arr = d[k]
