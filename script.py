@@ -76,6 +76,15 @@ def truncate_after_match(transcript, course_id):
     return transcript
 
 
+def take_best_attempt_only(transcript):
+    d = {}
+    for a in transcript:
+        id = a['id']
+        if id not in d.keys() or a['grade'] > d[id]['grade']:
+            d[id] = a
+    return sorted(d.values(), key=lambda a: a['date'])
+
+
 def print_confidence_for_intro_to_adv_all_grade_combinations(simple_students):
     for a in [0, 2, 4]:
         for b in [0, 2, 4]:
@@ -102,6 +111,21 @@ print_confidence_for_intro_to_adv_all_grade_combinations(simple_data)
 # 4 4 0.6498740554156172 258
 
 print_confidence_for_intro_to_adv_all_grade_combinations([truncate_after_match(t, adv_prog) for t in simple_data])
+# 0 0 0.39215686274509803 20
+# 0 2 0.1568627450980392 8
+# 0 4 0.09803921568627451 5
+
+# 2 0 0.24161073825503357 36
+# 2 2 0.3825503355704698 57
+# 2 4 0.24161073825503357 36
+
+# 4 0 0.0625 24
+# 4 2 0.171875 66
+# 4 4 0.6354166666666666 244
+
+print_confidence_for_intro_to_adv_all_grade_combinations(
+    [take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data]
+)
 # 0 0 0.39215686274509803 20
 # 0 2 0.1568627450980392 8
 # 0 4 0.09803921568627451 5
