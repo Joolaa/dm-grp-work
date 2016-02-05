@@ -1,11 +1,11 @@
-def support_count(x, data):
+def support_count(x, transactions):
     count = 0
-    for set in data:
+    for set in transactions:
         count += (x <= set)
     return count
 
-#returns the number of transactions that satisfy
-#the given predicate
+# returns the number of transactions that satisfy
+# the given predicate
 def absolute_frequency(transactions, pred):
     count = 0
     for transaction in transactions:
@@ -14,18 +14,18 @@ def absolute_frequency(transactions, pred):
     return count
 
 
-def support(x, data):
-    return support_count(x, data) / len(data)
+def support(x, transactions):
+    return support_count(x, transactions) / len(transactions)
 
-#returns the relative amount of transactions that
-#satisfy the given predicate
+# returns the relative amount of transactions that
+# satisfy the given predicate
 def relative_frequency(transactions, pred):
     set_support_count = absolute_frequency(transactions, pred) + 0.0
     return set_support_count / len(transactions)
 
-#calculates the relative amount of transactions
-#that satisfy the association rule premise -> conclusion
-#premise and conclusion are both predicates
+# calculates the relative amount of transactions
+# that satisfy the association rule premise -> conclusion
+# premise and conclusion are both predicates
 def confidence(transactions, premise, conclusion):
     union = lambda trnsc: premise(trnsc) and conclusion(trnsc)
     rule_support_count = absolute_frequency(transactions, union) + 0.0
