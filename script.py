@@ -19,6 +19,13 @@ def process_students(students):
         processed_students.append(record)
     return processed_students
 
+
+def replace_id(original, new, transactions):
+    for transcript in transactions:
+        for a in transcript:
+            if a['id'] == original:
+                a['id'] = new
+
 simple_data = process_students(students)
 
 
@@ -88,22 +95,29 @@ def take_best_attempt_only(transcript):
         d[intro_prog] = {'grade': -1, 'id': intro_prog, 'date': dateutil.parser.parse("1-1-1900")}
     return sorted(d.values(), key=lambda a: a['date'])
 
+decimals = 3
 
 def print_confidence_for_intro_to_adv_all_grade_combinations(simple_students):
     x = [-1, 0, 2, 4]
+    print("a\\b -1 0 2 4 row_sup")
     for a in x:
         ans = []
         for b in x:
             ans.append(
                   confidence_for_intro_to_adv(simple_students, a, b),
             )
+        support_count = 0
+        print(a, end=" ")
         for i in range(len(x)):
-            print(a, x[i], round(ans[i], 3),
-                  alg.absolute_frequency(
-                    simple_students,
-                    lambda t: in_sets_test(t, [intro_prog], [a]) and in_sets_test(t, [adv_prog], [x[i]])
-                  )
+            support_count += alg.absolute_frequency(
+                simple_students,
+                lambda t: in_sets_test(t, [intro_prog], [a]) and in_sets_test(t, [adv_prog], [x[i]])
+              )
+            print(round(ans[i], decimals),
+                  end=" "
             )
+        print(support_count)
+    print()
 
 
 
@@ -133,10 +147,18 @@ def print_confidence_for_intro_to_adv_all_grade_combinations(simple_students):
 # 4 0 0.0625 24
 # 4 2 0.171875 66
 # 4 4 0.6354166666666666 244
+replace_id(55056, 55521, simple_data)
+replace_id(55063, 55522, simple_data)
 
-print_confidence_for_intro_to_adv_all_grade_combinations(
-    [take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data]
-)
+pairs = [(581325, 582103), (55521, 55522), (581325, 582103), (57016, 57017)]
+for x in pairs:
+    intro_prog = str(x[0])
+    adv_prog = str(x[1])
+    print(x[0], x[1])
+    print_confidence_for_intro_to_adv_all_grade_combinations(
+        [take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data]
+    )
+
 
 # 0 0 0.2916666666666667 7
 # 0 2 0.0 0
