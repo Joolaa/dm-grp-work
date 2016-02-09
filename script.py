@@ -73,6 +73,8 @@ def truncate_after_match(transcript, course_id):
             return transcript[:i]
         if a['id'] == course_id:
             found = True
+    if not found:
+        transcript.append({'grade': -1, 'id': course_id, 'date': dateutil.parser.parse("1-1-2100")})
     return transcript
 
 
@@ -82,22 +84,31 @@ def take_best_attempt_only(transcript):
         id = a['id']
         if id not in d.keys() or a['grade'] > d[id]['grade']:
             d[id] = a
+    if intro_prog not in d.keys():
+        d[intro_prog] = {'grade': -1, 'id': intro_prog, 'date': dateutil.parser.parse("1-1-1900")}
     return sorted(d.values(), key=lambda a: a['date'])
 
 
-def  print_confidence_for_intro_to_adv_all_grade_combinations(simple_students):
-    for a in [0, 2, 4]:
-        for b in [0, 2, 4]:
-            print(
-                  a, b,
+def print_confidence_for_intro_to_adv_all_grade_combinations(simple_students):
+    x = [-1, 0, 2, 4]
+    for a in x:
+        ans = []
+        for b in x:
+            ans.append(
                   confidence_for_intro_to_adv(simple_students, a, b),
+            )
+        for i in range(len(x)):
+            print(a, x[i], round(ans[i], 3),
                   alg.absolute_frequency(
                     simple_students,
-                    lambda t: in_sets_test(t, [intro_prog], [a]) and in_sets_test(t, [adv_prog], [b])
+                    lambda t: in_sets_test(t, [intro_prog], [a]) and in_sets_test(t, [adv_prog], [x[i]])
                   )
             )
 
-print_confidence_for_intro_to_adv_all_grade_combinations(simple_data)
+
+
+
+# print_confidence_for_intro_to_adv_all_grade_combinations(simple_data)
 # 0 0 0.4107142857142857 23
 # 0 2 0.35714285714285715 20
 # 0 4 0.17857142857142858 10
@@ -110,7 +121,7 @@ print_confidence_for_intro_to_adv_all_grade_combinations(simple_data)
 # 4 2 0.19395465994962216 77
 # 4 4 0.6498740554156172 258
 
-print_confidence_for_intro_to_adv_all_grade_combinations([truncate_after_match(t, adv_prog) for t in simple_data])
+# print_confidence_for_intro_to_adv_all_grade_combinations([truncate_after_match(t, adv_prog) for t in simple_data])
 # 0 0 0.39215686274509803 20
 # 0 2 0.1568627450980392 8
 # 0 4 0.09803921568627451 5
@@ -126,6 +137,7 @@ print_confidence_for_intro_to_adv_all_grade_combinations([truncate_after_match(t
 print_confidence_for_intro_to_adv_all_grade_combinations(
     [take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data]
 )
+
 # 0 0 0.2916666666666667 7
 # 0 2 0.0 0
 # 0 4 0.08333333333333333 2
@@ -137,6 +149,16 @@ print_confidence_for_intro_to_adv_all_grade_combinations(
 # 4 0 0.0625 24
 # 4 2 0.16666666666666666 64
 # 4 4 0.6354166666666666 244
+
+#print(alg.absolute_frequency(
+#[take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data],
+#lambda t: in_sets_test(t, [adv_prog], [4])
+#) /
+#alg.absolute_frequency(
+#[take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data],
+#lambda t: in_sets_test(t, [adv_prog], [0, 2, 4])
+#)
+#)
 
 # count how many times a student has the intro on record
 # for datum in simple_data:

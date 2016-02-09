@@ -30,6 +30,8 @@ def confidence(transactions, premise, conclusion):
     union = lambda trnsc: premise(trnsc) and conclusion(trnsc)
     rule_support_count = absolute_frequency(transactions, union) + 0.0
     premise_support_count = absolute_frequency(transactions, premise)
+    if premise_support_count == 0:
+        return 0
     return rule_support_count / premise_support_count
 
 def generate(lists):
