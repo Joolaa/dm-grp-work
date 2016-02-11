@@ -2,6 +2,7 @@ import fileparser
 import dateutil.parser
 import algorithms
 
+
 students = fileparser.parse_students()
 courses = []
 
