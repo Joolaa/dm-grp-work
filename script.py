@@ -1,6 +1,7 @@
 import fileparser as f
 import algorithms as alg
 import dateutil.parser
+import datetime as d
 
 students = f.parse_students()
 adv_prog = "582103"
@@ -19,6 +20,29 @@ def process_students(students):
         processed_students.append(record)
     return processed_students
 
+def next_semester_date(date, springmonth, fallmonth):
+    month = date.month
+    if month < fallmonth:
+        return d.datetime(date.year, fallmonth, 1, 0, 0, 0, 0)
+    else:
+        return d.datetime(date.year + 1, springmonth, 1, 0, 0, 0, 0)
+
+#partitions the student data by semester
+#assumes that the data is sorted chronologically
+def partition_by_semester(student, springmonth=1, fallmonth=9):
+    partition = []
+    deadline = next_semester_date(student[0]['date'], springmonth, fallmonth)
+    cur_partition = []
+    for course in student:
+        if course['date'] < deadline:
+            cur_partition.append(course)
+        else:
+            deadline = next_semester_date(course['date'],
+                                          springmonth,
+                                          fallmonth)
+            partition.append(cur_partition)
+            cur_partition = [course]
+    return partition
 
 def replace_id(original, new, transactions):
     for transcript in transactions:
@@ -26,7 +50,32 @@ def replace_id(original, new, transactions):
             if a['id'] == original:
                 a['id'] = new
 
+def strip_all_but_codes(lists):
+    result = []
+    for courselist in lists:
+        result.append([int(course['id']) for course in courselist])
+    return result
+
+def flatten_a_level(lists):
+    result = []
+    for courselistlist in lists:
+        for courselist in courselistlist:
+            result.append(courselist)
+    return result
+
+def unique_courses_from_codes(students):
+    result_st = set([])
+    for student in students:
+        for course in student:
+            result_st.add(course)
+    result_list = list(result_st)
+    result_list.sort()
+    return result_list
+
 simple_data = process_students(students)
+simpler_semester_data = strip_all_but_codes(flatten_a_level(
+    [partition_by_semester(student) for student in simple_data]))
+unique_simpler_courses = unique_courses_from_codes(simpler_semester_data)
 
 
 # returns true if the student has course codes listed on their
@@ -107,15 +156,13 @@ def print_confidence_for_intro_to_adv_all_grade_combinations(simple_students):
                   confidence_for_intro_to_adv(simple_students, a, b),
             )
         support_count = 0
-        print(a, end=" ")
+        print(a, " ")
         for i in range(len(x)):
             support_count += alg.absolute_frequency(
                 simple_students,
                 lambda t: in_sets_test(t, [intro_prog], [a]) and in_sets_test(t, [adv_prog], [x[i]])
               )
-            print(round(ans[i], decimals),
-                  end=" "
-            )
+            print(round(ans[i], decimals), " ")
         print(support_count)
     print()
 
@@ -150,14 +197,14 @@ def print_confidence_for_intro_to_adv_all_grade_combinations(simple_students):
 replace_id(55056, 55521, simple_data)
 replace_id(55063, 55522, simple_data)
 
-pairs = [(581325, 582103), (55521, 55522), (581325, 582103), (57016, 57017)]
-for x in pairs:
-    intro_prog = str(x[0])
-    adv_prog = str(x[1])
-    print(x[0], x[1])
-    print_confidence_for_intro_to_adv_all_grade_combinations(
-        [take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data]
-    )
+#pairs = [(581325, 582103), (55521, 55522), (581325, 582103), (57016, 57017)]
+#for x in pairs:
+#    intro_prog = str(x[0])
+#    adv_prog = str(x[1])
+#    print(x[0], x[1])
+#    print_confidence_for_intro_to_adv_all_grade_combinations(
+#        [take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data]
+#    )
 
 
 # 0 0 0.2916666666666667 7
