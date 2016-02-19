@@ -55,6 +55,18 @@ def generate(lists):
 
     return response
 
+def prune(lists, candidates):
+    pruned_candidates = []
+    d = dict((frozenset(x), None) for x in lists)
+    for itemset in candidates:
+        ok = True
+        for item in itemset:
+            if frozenset(itemset - {item}) not in d:
+                ok = False
+                break
+        if ok:
+            pruned_candidates.append(itemset)
+    return pruned_candidates
 
 def apriori_new(min_support, lists, transactions):
     response = []
@@ -68,10 +80,12 @@ def apriori_new(min_support, lists, transactions):
     accum = []
 
     while len(lists) > 0:
-        print("generating candidates")
+        print("Generating candidates from {} {}-itemsets".format(len(lists), len(lists[0])))
         candidates = generate(lists)
+        print("Pruning", len(candidates), "candidates")
+        candidates = prune(lists, candidates)
         lists = []
-        print("calculating support for {} candidates".format(len(candidates)))
+        print("Calculating support for {} candidates".format(len(candidates)))
         for candidate in candidates:
             supp = support(candidate, transactions)
             if supp >= min_support:

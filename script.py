@@ -75,6 +75,7 @@ def get_until_course_grade(students, course_id, grades, includeLast = False):
         for i in range(len(student)):
             if student[i]['id'] == course_id and student[i]['grade'] in grades:
                 accum.append(student[:i + includeLast])
+                break
     return accum
 
 def flatten_a_level(lists):
@@ -262,8 +263,9 @@ def find_interesting_association_rules():
     target_grade = 4
     target_int = int(target_course) * 10 + target_grade
     transcripts = get_until_course_grade(simple_data, target_course, [0, 2, 4], True)
-    transcripts = [set(int(a['id']) * 10 + int(a['grade']) for a in take_best_attempt_only(t)) for t in transcripts]
-    apriori_initial_itemsets = [{x} | {target_int} for x in unique_courses_from_codes(transcripts) if x / 10 != int(target_course)]
+    transcripts = [set(int(a['id']) * 10 + int(a['grade']) for a in t) for t in transcripts]
+    #apriori_initial_itemsets = [{x} | {target_int} for x in unique_courses_from_codes(transcripts) if x / 10 != int(target_course)]
+    apriori_initial_itemsets = [{x} for x in unique_courses_from_codes(transcripts)]
     frequent_itemsets = alg.apriori_new(support_threshold, apriori_initial_itemsets, transcripts)
     frequent_itemsets.sort(key=lambda x: x[1], reverse=True)
     frequent_itemsets = [x for x in frequent_itemsets if target_int in x[0]]
