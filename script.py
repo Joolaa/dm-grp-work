@@ -69,12 +69,12 @@ def tuplify(students):
 #after if finds course with any of the specified grades
 #filters out a student if such course is not found
 #assumes attempts are chronologically sorted
-def get_until_course_grade(students, course_id, grades):
+def get_until_course_grade(students, course_id, grades, includeLast = False):
     accum = []
     for student in students:
-        for i in xrange(len(student)):
+        for i in range(len(student)):
             if student[i]['id'] == course_id and student[i]['grade'] in grades:
-                accum.append(student[:i])
+                accum.append(student[:i + includeLast])
     return accum
 
 def flatten_a_level(lists):
@@ -142,16 +142,6 @@ def support_for_adv_prog_grade(simple_students, grade):
                                                        [grade])
     return alg.relative_frequency(simple_students, has_done_with_grade)
 
-# support_for_adv_prog_grade(simple_data, 4)
-# 0.22662889518413598
-
-# support_for_adv_prog_grade(simple_data, 2)
-# 0.10835694050991501
-
-# support_for_adv_prog_grade(simple_data, 0)
-# 0.051699716713881017
-
-
 def confidence_for_intro_to_adv(simple_students, intro_grade, adv_grade):
     intro_with_grade = lambda student: in_sets_test(student,
                                                     [intro_prog],
@@ -208,77 +198,8 @@ def print_confidence_for_intro_to_adv_all_grade_combinations(simple_students):
         print(support_count)
     print()
 
-
-
-
-# print_confidence_for_intro_to_adv_all_grade_combinations(simple_data)
-# 0 0 0.4107142857142857 23
-# 0 2 0.35714285714285715 20
-# 0 4 0.17857142857142858 10
-#
-# 2 0 0.24183006535947713 37
-# 2 2 0.477124183006536 73
-# 2 4 0.2875816993464052 44
-#
-# 4 0 0.08060453400503778 32
-# 4 2 0.19395465994962216 77
-# 4 4 0.6498740554156172 258
-
-# print_confidence_for_intro_to_adv_all_grade_combinations([truncate_after_match(t, adv_prog) for t in simple_data])
-# 0 0 0.39215686274509803 20
-# 0 2 0.1568627450980392 8
-# 0 4 0.09803921568627451 5
-
-# 2 0 0.24161073825503357 36
-# 2 2 0.3825503355704698 57
-# 2 4 0.24161073825503357 36
-
-# 4 0 0.0625 24
-# 4 2 0.171875 66
-# 4 4 0.6354166666666666 244
 replace_id(55056, 55521, simple_data)
 replace_id(55063, 55522, simple_data)
-
-#pairs = [(581325, 582103), (55521, 55522), (581325, 582103), (57016, 57017)]
-#for x in pairs:
-#    intro_prog = str(x[0])
-#    adv_prog = str(x[1])
-#    print(x[0], x[1])
-#    print_confidence_for_intro_to_adv_all_grade_combinations(
-#        [take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data]
-#    )
-
-
-# 0 0 0.2916666666666667 7
-# 0 2 0.0 0
-# 0 4 0.08333333333333333 2
-
-# 2 0 0.22794117647058823 31
-# 2 2 0.375 51
-# 2 4 0.23529411764705882 32
-
-# 4 0 0.0625 24
-# 4 2 0.16666666666666666 64
-# 4 4 0.6354166666666666 244
-
-#print(alg.absolute_frequency(
-#[take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data],
-#lambda t: in_sets_test(t, [adv_prog], [4])
-#) /
-#alg.absolute_frequency(
-#[take_best_attempt_only(truncate_after_match(t, adv_prog)) for t in simple_data],
-#lambda t: in_sets_test(t, [adv_prog], [0, 2, 4])
-#)
-#)
-
-# count how many times a student has the intro on record
-# for datum in simple_data:
-#    if (in_sets_test(datum, ["581325"], [0, 2, 4])):
-#        count = 0
-#        for courses in datum:
-#            if (str(courses['id']) == "581325"):
-#                count += 1
-#        print(count)
 
 adv_g4_truncated = setify(tuplify(get_until_course_grade
                                   (simple_data, adv_prog, [4])))
@@ -287,44 +208,6 @@ adv_any_strip_grades = setify(
     strip_all_but_codes(
         get_until_course_grade(simple_data, adv_prog, [0, 2, 4])))
 
-#alg.apriori(0.1, unique_grade_courses, adv_g4_truncated)[-10:]
-#[({(581324, 4), (581325, 4), (582514, 4)}, 0.2225609756097561),
-# ({(581325, 4), (582104, 4), (582514, 4)}, 0.11585365853658537),
-# ({(57039, 4), (581324, 4), (581325, 4)}, 0.14939024390243902),
-# ({(57039, 4), (581324, 4), (582104, 4)}, 0.10060975609756098),
-# ({(57039, 4), (581324, 4), (582514, 4)}, 0.14939024390243902),
-# ({(57039, 4), (581325, 4), (582514, 4)}, 0.12804878048780488),
-# ({(581324, 4), (582104, 4), (582514, 4)}, 0.11890243902439024),
-# ({(57016, 4), (57043, 4), (57598, 4)}, 0.10060975609756098),
-# ({(581324, 4), (581325, 4), (582104, 4), (582514, 4)}, 0.10060975609756098),
-# ({(57039, 4), (581324, 4), (581325, 4), (582514, 4)}, 0.11585365853658537)]
-#
-#alg.apriori(0.3, unique_simpler_courses, adv_any_strip_grades)[-10:]
-#[({582104, 582514}, 0.358974358974359),
-# ({57039, 581324, 582514}, 0.3230769230769231),
-# ({57039, 581325, 582514}, 0.3247863247863248),
-# ({581324, 581325, 582514}, 0.4717948717948718),
-# ({581324, 581325, 582104}, 0.37094017094017095),
-# ({581324, 582104, 582514}, 0.35213675213675216),
-# ({581325, 582104, 582514}, 0.35213675213675216),
-# ({57039, 581324, 581325}, 0.3435897435897436),
-# ({581324, 581325, 582104, 582514}, 0.3452991452991453),
-# ({57039, 581324, 581325, 582514}, 0.3162393162393162)]
-#alg.apriori(0.1, unique_simpler_courses, adv_any_strip_grades)[-10:]
-#[({57039, 57049, 581324, 581325, 582102, 582513, 582514}, 0.11282051282051282),
-# ({57039, 57049, 581324, 582102, 582104, 582513, 582514}, 0.10427350427350428),
-# ({57039, 57049, 581325, 582102, 582104, 582513, 582514}, 0.10427350427350428),
-# ({57049, 581324, 581325, 582102, 582104, 582513, 582514},
-#  0.11452991452991453),
-# ({57039, 57049, 581324, 581325, 582102, 582104, 582513}, 0.1094017094017094),
-# ({57039, 57049, 581324, 581325, 582104, 582513, 582514}, 0.1111111111111111),
-# ({57039, 57049, 581324, 581325, 582102, 582104, 582514}, 0.11452991452991453),
-# ({57016, 57017, 57043, 57047, 57594, 57598, 581325}, 0.10085470085470086),
-# ({57039, 581324, 581325, 582102, 582104, 582513, 582514},
-#  0.13675213675213677),
-# ({57039, 57049, 581324, 581325, 582102, 582104, 582513, 582514},
-#  0.10427350427350428)]
-#
 def count_transcript_lenghts(students):
     lengths = {}
     for student in students:
@@ -366,8 +249,34 @@ def data_asked():
     the_base_set = setify(strip_all_but_codes
                           (take_out_course_not_grade(adv_prog, [4])))
     for fr_itemset in premises:
-        premise = lambda(tr): fr_itemset <= tr
-        consequent = lambda(tr): adv_prog in tr
+        premise = lambda tr: fr_itemset <= tr
+        consequent = lambda tr: adv_prog in tr
+        print(the_base_set, "\n", fr_itemset, "\n", adv_prog, "\n")
         conf = alg.confidence(the_base_set, premise, consequent)
         results.append({'premise': fr_itemset, 'conf': conf})
     return results
+
+def find_interesting_association_rules():
+    support_threshold = 0.1
+    target_course = adv_prog
+    target_grade = 4
+    target_int = int(target_course) * 10 + target_grade
+    transcripts = get_until_course_grade(simple_data, target_course, [0, 2, 4], True)
+    transcripts = [set(int(a['id']) * 10 + int(a['grade']) for a in take_best_attempt_only(t)) for t in transcripts]
+    frequent_itemsets = alg.apriori(support_threshold, unique_courses_from_codes(transcripts), transcripts)
+    frequent_itemsets.sort(key=lambda x: x[1], reverse=True)
+    frequent_itemsets = [x for x in frequent_itemsets if target_int in x[0]]
+    itemset_support_confidences = [x + (x[1] / alg.support(x[0] - {target_int}, transcripts),) for x in frequent_itemsets]
+    itemset_support_confidence_lifts = [x + (x[2] / alg.support({target_int}, transcripts),) for x in itemset_support_confidences]
+    itemset_support_confidence_lift_interestingness = [x + (x[3] if x[3] >= 1 else 1.0/x[3],) for x in itemset_support_confidence_lifts]
+    itemset_support_confidence_lift_interestingness.sort(key=lambda x: x[-1], reverse=True)
+    print()
+    for x in itemset_support_confidence_lift_interestingness:
+        print("{} -> {{{}}}".format(x[0] - {target_int}, target_int))
+        print("support", round(x[1], decimals))
+        print("confidence", round(x[2], decimals))
+        print("lift", round(x[3], decimals))
+        print("interestingness", round(x[4], decimals))
+        print()
+
+find_interesting_association_rules()
