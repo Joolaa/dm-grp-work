@@ -56,6 +56,27 @@ def strip_all_but_codes(lists):
         result.append([int(course['id']) for course in courselist])
     return result
 
+def tuplify(students):
+    result = []
+    for student in students:
+        courseaccum = []
+        for course in student:
+            courseaccum.append((int(course['id']), course['grade']))
+        result.append(courseaccum)
+    return result
+
+#goes through student data and truncates course list
+#after if finds course with any of the specified grades
+#filters out a student if such course is not found
+#assumes attempts are chronologically sorted
+def get_until_course_grade(students, course_id, grades):
+    accum = []
+    for student in students:
+        for i in xrange(len(student)):
+            if student[i]['id'] == course_id and student[i]['grade'] in grades:
+                accum.append(student[:i])
+    return accum
+
 def flatten_a_level(lists):
     result = []
     for courselistlist in lists:
@@ -82,7 +103,9 @@ simple_data = process_students(students)
 simpler_semester_data = strip_all_but_codes(flatten_a_level(
     [partition_by_semester(student) for student in simple_data]))
 simpler_data = setify(strip_all_but_codes(simple_data))
+almost_as_simple_data = setify(tuplify(simple_data))
 unique_simpler_courses = unique_courses_from_codes(simpler_semester_data)
+unique_grade_courses = unique_courses_from_codes(almost_as_simple_data)
 
 
 # returns true if the student has course codes listed on their
@@ -244,3 +267,17 @@ replace_id(55063, 55522, simple_data)
 #            if (str(courses['id']) == "581325"):
 #                count += 1
 #        print(count)
+
+adv_g4_truncated = setify(tuplify(get_until_course_grade
+                                  (simple_data, adv_prog, [4])))
+#alg.apriori(0.1, unique_grade_courses, adv_g4_truncated)[-10:]
+#[({(581324, 4), (581325, 4), (582514, 4)}, 0.2225609756097561),
+# ({(581325, 4), (582104, 4), (582514, 4)}, 0.11585365853658537),
+# ({(57039, 4), (581324, 4), (581325, 4)}, 0.14939024390243902),
+# ({(57039, 4), (581324, 4), (582104, 4)}, 0.10060975609756098),
+# ({(57039, 4), (581324, 4), (582514, 4)}, 0.14939024390243902),
+# ({(57039, 4), (581325, 4), (582514, 4)}, 0.12804878048780488),
+# ({(581324, 4), (582104, 4), (582514, 4)}, 0.11890243902439024),
+# ({(57016, 4), (57043, 4), (57598, 4)}, 0.10060975609756098),
+# ({(581324, 4), (581325, 4), (582104, 4), (582514, 4)}, 0.10060975609756098),
+# ({(57039, 4), (581324, 4), (581325, 4), (582514, 4)}, 0.11585365853658537)]
