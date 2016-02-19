@@ -9,7 +9,7 @@ def support_count(x, transactions):
 def absolute_frequency(transactions, pred):
     count = 0.0
     for transaction in transactions:
-        if(pred(transaction)):
+        if pred(transaction):
             count += 1
     return count
 
@@ -56,8 +56,7 @@ def generate(lists):
     return response
 
 
-def apriori(min_support, items, transactions):
-    lists = list(set([item]) for item in items)
+def apriori_new(min_support, lists, transactions):
     response = []
     accum = []
     for listt in lists:
@@ -80,6 +79,9 @@ def apriori(min_support, items, transactions):
                 response.append((candidate, supp))
 
     return response
+
+def apriori(min_support, items, transactions):
+    return apriori_new(min_support, [set([item]) for item in items], transactions)
 
 
 import copy

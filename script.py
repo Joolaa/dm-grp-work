@@ -258,12 +258,13 @@ def data_asked():
 
 def find_interesting_association_rules():
     support_threshold = 0.1
-    target_course = adv_prog
+    target_course = "582103"
     target_grade = 4
     target_int = int(target_course) * 10 + target_grade
     transcripts = get_until_course_grade(simple_data, target_course, [0, 2, 4], True)
     transcripts = [set(int(a['id']) * 10 + int(a['grade']) for a in take_best_attempt_only(t)) for t in transcripts]
-    frequent_itemsets = alg.apriori(support_threshold, unique_courses_from_codes(transcripts), transcripts)
+    apriori_initial_itemsets = [{x} | {target_int} for x in unique_courses_from_codes(transcripts) if x / 10 != int(target_course)]
+    frequent_itemsets = alg.apriori_new(support_threshold, apriori_initial_itemsets, transcripts)
     frequent_itemsets.sort(key=lambda x: x[1], reverse=True)
     frequent_itemsets = [x for x in frequent_itemsets if target_int in x[0]]
     itemset_support_confidences = [x + (x[1] / alg.support(x[0] - {target_int}, transcripts),) for x in frequent_itemsets]
