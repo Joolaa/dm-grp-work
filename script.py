@@ -123,6 +123,18 @@ def in_sets_test(simple_student, course_codes, grades):
             break
     return satisfied
 
+def in_only_codes_set(transaction_as_codes, course_codes):
+    satisfied = True
+    for code in course_codes:
+        for course_id in transaction_as_codes:
+            if int(course_id) == int(code):
+                satisfied = True
+                break
+        satisfied = False
+        if not satisfied:
+            break
+    return satisfied
+
 
 def support_for_adv_prog_grade(simple_students, grade):
     has_done_with_grade = lambda student: in_sets_test(student,
@@ -270,6 +282,11 @@ replace_id(55063, 55522, simple_data)
 
 adv_g4_truncated = setify(tuplify(get_until_course_grade
                                   (simple_data, adv_prog, [4])))
+
+adv_any_strip_grades = setify(
+    strip_all_but_codes(
+        get_until_course_grade(simple_data, adv_prog, [0, 2, 4])))
+
 #alg.apriori(0.1, unique_grade_courses, adv_g4_truncated)[-10:]
 #[({(581324, 4), (581325, 4), (582514, 4)}, 0.2225609756097561),
 # ({(581325, 4), (582104, 4), (582514, 4)}, 0.11585365853658537),
@@ -281,3 +298,76 @@ adv_g4_truncated = setify(tuplify(get_until_course_grade
 # ({(57016, 4), (57043, 4), (57598, 4)}, 0.10060975609756098),
 # ({(581324, 4), (581325, 4), (582104, 4), (582514, 4)}, 0.10060975609756098),
 # ({(57039, 4), (581324, 4), (581325, 4), (582514, 4)}, 0.11585365853658537)]
+#
+#alg.apriori(0.3, unique_simpler_courses, adv_any_strip_grades)[-10:]
+#[({582104, 582514}, 0.358974358974359),
+# ({57039, 581324, 582514}, 0.3230769230769231),
+# ({57039, 581325, 582514}, 0.3247863247863248),
+# ({581324, 581325, 582514}, 0.4717948717948718),
+# ({581324, 581325, 582104}, 0.37094017094017095),
+# ({581324, 582104, 582514}, 0.35213675213675216),
+# ({581325, 582104, 582514}, 0.35213675213675216),
+# ({57039, 581324, 581325}, 0.3435897435897436),
+# ({581324, 581325, 582104, 582514}, 0.3452991452991453),
+# ({57039, 581324, 581325, 582514}, 0.3162393162393162)]
+#alg.apriori(0.1, unique_simpler_courses, adv_any_strip_grades)[-10:]
+#[({57039, 57049, 581324, 581325, 582102, 582513, 582514}, 0.11282051282051282),
+# ({57039, 57049, 581324, 582102, 582104, 582513, 582514}, 0.10427350427350428),
+# ({57039, 57049, 581325, 582102, 582104, 582513, 582514}, 0.10427350427350428),
+# ({57049, 581324, 581325, 582102, 582104, 582513, 582514},
+#  0.11452991452991453),
+# ({57039, 57049, 581324, 581325, 582102, 582104, 582513}, 0.1094017094017094),
+# ({57039, 57049, 581324, 581325, 582104, 582513, 582514}, 0.1111111111111111),
+# ({57039, 57049, 581324, 581325, 582102, 582104, 582514}, 0.11452991452991453),
+# ({57016, 57017, 57043, 57047, 57594, 57598, 581325}, 0.10085470085470086),
+# ({57039, 581324, 581325, 582102, 582104, 582513, 582514},
+#  0.13675213675213677),
+# ({57039, 57049, 581324, 581325, 582102, 582104, 582513, 582514},
+#  0.10427350427350428)]
+#
+def count_transcript_lenghts(students):
+    lengths = {}
+    for student in students:
+        length = len(student)
+        if length not in lengths:
+            lengths[length] = 1
+        else:
+            lengths[length] += 1
+    return lengths
+
+
+adv_g4_stripped = get_until_course_grade(simple_data, adv_prog, [4])
+adv_g4_stripped = setify(strip_all_but_codes(adv_g4_stripped))
+
+def take_out_course_not_grade(course_id, accepted_grades,
+                              students = simple_data):
+    result = []
+    for student in students:
+        accum_course = []
+        for course in student:
+            if course['id'] != course_id:
+                accum_course.append(course)
+            elif course['grade'] in accepted_grades:
+                accum_course.append(course)
+        result.append(accum_course)
+    return result
+
+def data_asked():
+    results = []
+    threshold_for_rule = 0.1
+    last_n = 30
+    the_courses = unique_courses_from_codes(adv_g4_stripped)
+    large_freq_itemsets = alg.apriori(threshold_for_rule,
+                                      the_courses,
+                                      adv_g4_stripped)[-last_n:]
+    premises = []
+    for itemsetsup in large_freq_itemsets:
+        premises.append(itemsetsup[0])
+    the_base_set = setify(strip_all_but_codes
+                          (take_out_course_not_grade(adv_prog, [4])))
+    for fr_itemset in premises:
+        premise = lambda(tr): fr_itemset <= tr
+        consequent = lambda(tr): adv_prog in tr
+        conf = alg.confidence(the_base_set, premise, consequent)
+        results.append({'premise': fr_itemset, 'conf': conf})
+    return results

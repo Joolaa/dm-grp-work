@@ -7,7 +7,7 @@ def support_count(x, transactions):
 # returns the number of transactions that satisfy
 # the given predicate
 def absolute_frequency(transactions, pred):
-    count = 0
+    count = 0.0
     for transaction in transactions:
         if(pred(transaction)):
             count += 1
