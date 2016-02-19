@@ -1,5 +1,5 @@
 def support_count(x, transactions):
-    count = 0.0
+    count = 0
     for set in transactions:
         count += (x <= set)
     return count
@@ -68,18 +68,18 @@ def prune(lists, candidates):
             pruned_candidates.append(itemset)
     return pruned_candidates
 
-def apriori_new(min_support, lists, transactions):
+def apriori_new(min_support_count, lists, transactions, max_length):
     response = []
     accum = []
     for listt in lists:
-        supp = support(listt, transactions)
-        if supp >= min_support:
+        supp = support_count(listt, transactions)
+        if supp >= min_support_count:
             accum.append(listt)
             response.append((listt, supp))
     lists = accum
     accum = []
 
-    while len(lists) > 0:
+    while len(lists) > 0 and len(lists[0]) < max_length:
         print("Generating candidates from {} {}-itemsets".format(len(lists), len(lists[0])))
         candidates = generate(lists)
         print("Pruning", len(candidates), "candidates")
@@ -87,15 +87,15 @@ def apriori_new(min_support, lists, transactions):
         lists = []
         print("Calculating support for {} candidates".format(len(candidates)))
         for candidate in candidates:
-            supp = support(candidate, transactions)
-            if supp >= min_support:
+            supp = support_count(candidate, transactions)
+            if supp >= min_support_count:
                 lists.append(candidate)
                 response.append((candidate, supp))
 
     return response
 
 def apriori(min_support, items, transactions):
-    return apriori_new(min_support, [set([item]) for item in items], transactions)
+    return apriori_new(min_support * len(transactions) + 0.5, [set([item]) for item in items], transactions)
 
 
 import copy

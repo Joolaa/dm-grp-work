@@ -257,29 +257,51 @@ def data_asked():
         results.append({'premise': fr_itemset, 'conf': conf})
     return results
 
-def find_interesting_association_rules():
-    support_threshold = 0.1
-    target_course = "582103"
-    target_grade = 4
+def find_interesting_association_rules(support_count_threshold, target_course, target_grade, max_length=999):
+    target_course = str(target_course)
+    target_grade = int(target_grade)
     target_int = int(target_course) * 10 + target_grade
     transcripts = get_until_course_grade(simple_data, target_course, [0, 2, 4], True)
     transcripts = [set(int(a['id']) * 10 + int(a['grade']) for a in t) for t in transcripts]
-    #apriori_initial_itemsets = [{x} | {target_int} for x in unique_courses_from_codes(transcripts) if x / 10 != int(target_course)]
+    #apriori_initial_itemsets = [{x} | {target_int} for x in unique_courses_frhom_codes(transcripts) if x / 10 != int(target_course)]
     apriori_initial_itemsets = [{x} for x in unique_courses_from_codes(transcripts)]
-    frequent_itemsets = alg.apriori_new(support_threshold, apriori_initial_itemsets, transcripts)
+    frequent_itemsets = alg.apriori_new(support_count_threshold, apriori_initial_itemsets, transcripts, max_length)
     frequent_itemsets.sort(key=lambda x: x[1], reverse=True)
     frequent_itemsets = [x for x in frequent_itemsets if target_int in x[0]]
-    itemset_support_confidences = [x + (x[1] / alg.support(x[0] - {target_int}, transcripts),) for x in frequent_itemsets]
-    itemset_support_confidence_lifts = [x + (x[2] / alg.support({target_int}, transcripts),) for x in itemset_support_confidences]
-    itemset_support_confidence_lift_interestingness = [x + (x[3] if x[3] >= 1 else 1.0/x[3],) for x in itemset_support_confidence_lifts]
-    itemset_support_confidence_lift_interestingness.sort(key=lambda x: x[-1], reverse=True)
+    itemset_supportc_confidences = [x + (x[1] / len(transcripts) / alg.support(x[0] - {target_int}, transcripts),) for x in frequent_itemsets]
+    itemset_supportc_confidence_lifts = [x + (x[2] / alg.support({target_int}, transcripts),) for x in itemset_supportc_confidences]
+    itemset_supportc_confidence_lift_interestingness = [x + (x[3] if x[3] >= 1 else 1.0/x[3],) for x in itemset_supportc_confidence_lifts]
+    itemset_supportc_confidence_lift_interestingness.sort(key=lambda x: x[-1], reverse=True)
     print()
-    for x in itemset_support_confidence_lift_interestingness:
+    for x in itemset_supportc_confidence_lift_interestingness:
+        if len(x[0]) > max_length:
+            continue
         print("{} -> {{{}}}".format(x[0] - {target_int}, target_int))
-        print("support", round(x[1], decimals))
+        print("support count {}\nsupport {}".format(x[1], round(x[1] / len(transcripts), decimals)))
         print("confidence", round(x[2], decimals))
         print("lift", round(x[3], decimals))
         print("interestingness", round(x[4], decimals))
         print()
+    print("Transcripts in pruned data set:", len(transcripts))
 
-find_interesting_association_rules()
+
+def find_difficult_courses(min_attempts):
+    results = []
+    for couse_code in unique_courses_from_codes([set(a['id'] for a in t) for t in simple_data]):
+        transcripts = get_until_course_grade(simple_data, couse_code, [0, 2, 4], True)
+        attempts = 0
+        failures = 0
+        for t in transcripts:
+            if t[-1]['id'] == couse_code:
+                attempts += 1
+            if t[-1]['grade'] == 0:
+                failures += 1
+        if attempts >= min_attempts:
+            results.append([couse_code, attempts, failures / attempts])
+    results.sort(key=lambda x: x[2], reverse=True)
+    for x in results:
+        x[2] = round(x[2], decimals)
+        print(x)
+
+find_difficult_courses(30)
+find_interesting_association_rules(support_count_threshold=20, target_course=582219, target_grade=0, max_length=2)
