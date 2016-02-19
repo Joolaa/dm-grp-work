@@ -72,9 +72,16 @@ def unique_courses_from_codes(students):
     result_list.sort()
     return result_list
 
+def setify(lists):
+    result = []
+    for listt in lists:
+        result.append(set(listt))
+    return result
+
 simple_data = process_students(students)
 simpler_semester_data = strip_all_but_codes(flatten_a_level(
     [partition_by_semester(student) for student in simple_data]))
+simpler_data = setify(strip_all_but_codes(simple_data))
 unique_simpler_courses = unique_courses_from_codes(simpler_semester_data)
 
 

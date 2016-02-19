@@ -1,5 +1,5 @@
 def support_count(x, transactions):
-    count = 0
+    count = 0.0
     for set in transactions:
         count += (x <= set)
     return count
@@ -59,6 +59,14 @@ def generate(lists):
 def apriori(min_support, items, transactions):
     lists = list(set([item]) for item in items)
     response = []
+    accum = []
+    for listt in lists:
+        supp = support(listt, transactions)
+        if supp >= min_support:
+            accum.append(listt)
+            response.append((listt, supp))
+    lists = accum
+    accum = []
 
     while len(lists) > 0:
         print("generating candidates")
