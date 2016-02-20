@@ -266,7 +266,25 @@ def data_asked():
         results.append({'premise': fr_itemset, 'conf': conf})
     return results
 
-def find_interesting_association_rules(support_count_threshold, target_course, target_grade, max_length=999):
+def add_never_attempted_courses(support_count_threshold, transcripts):
+    for course_code in unique_courses_from_codes([set(a['id'] for a in t) for t in simple_data]):
+        support_count = 0
+        for g in [0, 2, 4]:
+            support_count += alg.support_count({int(course_code) * 10 + g}, transcripts)
+        if support_count >= support_count_threshold:
+            for t in transcripts:
+                found = False
+                for g in [0, 2, 4]:
+                    if int(course_code) * 10 + g in t:
+                        found = True
+                        break
+                if not found:
+                    t |= {int(course_code) * 10 + 9}
+
+def code_to_str(code):
+    return str(courseIdToName[code // 10]) + "_" + str(code % 10)
+
+def find_interesting_association_rules(support_count_threshold, target_course, target_grade, max_length=999, consider_non_attempted_courses=False):
     target_course = str(target_course)
     target_grade = int(target_grade)
     target_int = int(target_course) * 10 + target_grade
@@ -274,7 +292,9 @@ def find_interesting_association_rules(support_count_threshold, target_course, t
     transcripts_with_target_course = get_until_course_grade(simple_data, target_course, [0, 2, 4], True)
     transcripts = [set(int(a['id']) * 10 + int(a['grade']) for a in t) for t in transcripts]
     transcripts_with_target_course = [set(int(a['id']) * 10 + int(a['grade']) for a in t) for t in transcripts_with_target_course]
-
+    if consider_non_attempted_courses:
+        add_never_attempted_courses(support_count_threshold, transcripts)
+        add_never_attempted_courses(support_count_threshold, transcripts_with_target_course)
     # for t in transcripts:
     #     has = False
     #     for a in t:
@@ -283,7 +303,7 @@ def find_interesting_association_rules(support_count_threshold, target_course, t
     #             break
     #     if not has:
     #         t |= {5813059}
-    #apriori_initial_itemsets = [{x} | {target_int} for x in unique_courses_frhom_codes(transcripts) if x / 10 != int(target_course)]
+    #apriori_initial_itemsets = [{x} | {target_int} for x in unique_courses_frhom_codes(transcripts) if x // 10 != int(target_course)]
     apriori_initial_itemsets = [{x} for x in unique_courses_from_codes(transcripts)]
     frequent_itemsets = alg.apriori_new(support_count_threshold, apriori_initial_itemsets, transcripts, max_length)
     frequent_itemsets.sort(key=lambda x: x[1], reverse=True)
@@ -296,10 +316,20 @@ def find_interesting_association_rules(support_count_threshold, target_course, t
     #itemset_supportc_supportcls_confidence_lifts_interestingness = [x + (x[-1] if x[-1] >= 1 else 1.0/(x[-1] + 0.001),) for x in itemset_supportc_supportcls_confidence_lifts]
     itemset_supportc_supportcls_confidence_lifts.sort(key=lambda x: x[-1], reverse=True)
     print()
-    for x in itemset_supportc_supportcls_confidence_lifts:
+    redundant_rules = 0
+    for i, x in enumerate(itemset_supportc_supportcls_confidence_lifts):
         if len(x[0]) + 1 > max_length:
             continue
+        redundant = False
+        if x[4] > 1:
+            redundant = any(y[0] <= x[0] for y in itemset_supportc_supportcls_confidence_lifts[0:i])
+        else:
+            redundant = any(y[0] <= x[0] for y in itemset_supportc_supportcls_confidence_lifts[i + 1:])
+        if redundant:
+            redundant_rules += 1
+            continue
         print("{} -> {{{}}}".format(x[0] - {target_int}, target_int))
+        print("{} -> {{{}}}".format(set(code_to_str(a) for a in (x[0] - {target_int})), code_to_str(target_int)))
         print("support count lhs {}\nsupport lhs {}".format(x[2], round(x[2] / len(transcripts), decimals)))
         print("support count {}\nsupport {}".format(x[1], round(x[1] / len(transcripts), decimals)))
         print("confidence", round(x[3], decimals))
@@ -307,7 +337,8 @@ def find_interesting_association_rules(support_count_threshold, target_course, t
         #print("interestingness", round(x[5], decimals))
         print()
     print("Transcripts in pruned data set:", len(transcripts))
-
+    print("{} rules found".format(len(itemset_supportc_supportcls_confidence_lifts) - redundant_rules))
+    print("{} redundant rules pruned".format(redundant_rules))
 
 def find_difficult_courses(min_attempts):
     results = []
@@ -328,5 +359,12 @@ def find_difficult_courses(min_attempts):
         x[2] = round(x[2], decimals)
         print(x, courseIdToName[int(x[0])])
 
-#find_difficult_courses(30)
-find_interesting_association_rules(support_count_threshold=30, target_course=582219, target_grade=0, max_length=999)
+find_difficult_courses(min_attempts=150)
+print()
+find_interesting_association_rules(
+    support_count_threshold=50,
+    target_course=581305,
+    target_grade=0,
+    max_length=999,
+    consider_non_attempted_courses=False
+)
