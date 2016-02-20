@@ -6,7 +6,7 @@ import datetime as d
 students = f.parse_students()
 adv_prog = "582103"
 intro_prog = "581325"
-
+courseIdToName = {}
 
 def process_students(students):
     processed_students = []
@@ -16,6 +16,8 @@ def process_students(students):
                    'date': dateutil.parser.parse(attempt.date)}
                   for attempt
                   in student.attempts]
+        for attempt in student.attempts:
+            courseIdToName[int(attempt.course.id_num)] = attempt.course.name
         record.sort(key=lambda a: a['date'])
         processed_students.append(record)
     return processed_students
@@ -69,13 +71,20 @@ def tuplify(students):
 #after if finds course with any of the specified grades
 #filters out a student if such course is not found
 #assumes attempts are chronologically sorted
-def get_until_course_grade(students, course_id, grades, includeLast = False):
+def get_until_course_grade(students, course_id, grades, includeTarget = False):
     accum = []
     for student in students:
+        target = None
         for i in range(len(student)):
             if student[i]['id'] == course_id and student[i]['grade'] in grades:
-                accum.append(student[:i + includeLast])
+                target = student[i]
                 break
+        if target:
+            for i in range(len(student)):
+                if student[i]['date'] == target['date']:
+                    if i > 0:
+                        accum.append(student[:i] + ([target] if includeTarget else []))
+                        break
     return accum
 
 def flatten_a_level(lists):
@@ -261,26 +270,41 @@ def find_interesting_association_rules(support_count_threshold, target_course, t
     target_course = str(target_course)
     target_grade = int(target_grade)
     target_int = int(target_course) * 10 + target_grade
-    transcripts = get_until_course_grade(simple_data, target_course, [0, 2, 4], True)
+    transcripts = get_until_course_grade(simple_data, target_course, [0, 2, 4], False)
+    transcripts_with_target_course = get_until_course_grade(simple_data, target_course, [0, 2, 4], True)
     transcripts = [set(int(a['id']) * 10 + int(a['grade']) for a in t) for t in transcripts]
+    transcripts_with_target_course = [set(int(a['id']) * 10 + int(a['grade']) for a in t) for t in transcripts_with_target_course]
+
+    # for t in transcripts:
+    #     has = False
+    #     for a in t:
+    #         if a/10 == 581305:
+    #             has = True
+    #             break
+    #     if not has:
+    #         t |= {5813059}
     #apriori_initial_itemsets = [{x} | {target_int} for x in unique_courses_frhom_codes(transcripts) if x / 10 != int(target_course)]
     apriori_initial_itemsets = [{x} for x in unique_courses_from_codes(transcripts)]
     frequent_itemsets = alg.apriori_new(support_count_threshold, apriori_initial_itemsets, transcripts, max_length)
     frequent_itemsets.sort(key=lambda x: x[1], reverse=True)
-    frequent_itemsets = [x for x in frequent_itemsets if target_int in x[0]]
-    itemset_supportc_confidences = [x + (x[1] / len(transcripts) / alg.support(x[0] - {target_int}, transcripts),) for x in frequent_itemsets]
-    itemset_supportc_confidence_lifts = [x + (x[2] / alg.support({target_int}, transcripts),) for x in itemset_supportc_confidences]
-    itemset_supportc_confidence_lift_interestingness = [x + (x[3] if x[3] >= 1 else 1.0/x[3],) for x in itemset_supportc_confidence_lifts]
-    itemset_supportc_confidence_lift_interestingness.sort(key=lambda x: x[-1], reverse=True)
+    itemset_supportc_supportcls = []
+    for x in frequent_itemsets:
+        itemset = x[0] | {target_int}
+        itemset_supportc_supportcls.append((x[0], alg.support_count(itemset, transcripts_with_target_course), x[1]))
+    itemset_supportc_supportcls_confidences = [x + (x[1] / x[2],) for x in itemset_supportc_supportcls]
+    itemset_supportc_supportcls_confidence_lifts = [x + (x[-1] / alg.support({target_int}, transcripts_with_target_course),) for x in itemset_supportc_supportcls_confidences]
+    #itemset_supportc_supportcls_confidence_lifts_interestingness = [x + (x[-1] if x[-1] >= 1 else 1.0/(x[-1] + 0.001),) for x in itemset_supportc_supportcls_confidence_lifts]
+    itemset_supportc_supportcls_confidence_lifts.sort(key=lambda x: x[-1], reverse=True)
     print()
-    for x in itemset_supportc_confidence_lift_interestingness:
-        if len(x[0]) > max_length:
+    for x in itemset_supportc_supportcls_confidence_lifts:
+        if len(x[0]) + 1 > max_length:
             continue
         print("{} -> {{{}}}".format(x[0] - {target_int}, target_int))
+        print("support count lhs {}\nsupport lhs {}".format(x[2], round(x[2] / len(transcripts), decimals)))
         print("support count {}\nsupport {}".format(x[1], round(x[1] / len(transcripts), decimals)))
-        print("confidence", round(x[2], decimals))
-        print("lift", round(x[3], decimals))
-        print("interestingness", round(x[4], decimals))
+        print("confidence", round(x[3], decimals))
+        print("lift", round(x[4], decimals))
+        #print("interestingness", round(x[5], decimals))
         print()
     print("Transcripts in pruned data set:", len(transcripts))
 
@@ -291,6 +315,7 @@ def find_difficult_courses(min_attempts):
         transcripts = get_until_course_grade(simple_data, couse_code, [0, 2, 4], True)
         attempts = 0
         failures = 0
+        name = None
         for t in transcripts:
             if t[-1]['id'] == couse_code:
                 attempts += 1
@@ -301,7 +326,7 @@ def find_difficult_courses(min_attempts):
     results.sort(key=lambda x: x[2], reverse=True)
     for x in results:
         x[2] = round(x[2], decimals)
-        print(x)
+        print(x, courseIdToName[int(x[0])])
 
-find_difficult_courses(30)
-find_interesting_association_rules(support_count_threshold=20, target_course=582219, target_grade=0, max_length=2)
+#find_difficult_courses(30)
+find_interesting_association_rules(support_count_threshold=30, target_course=582219, target_grade=0, max_length=999)
