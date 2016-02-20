@@ -257,6 +257,14 @@ def data_asked():
         results.append({'premise': fr_itemset, 'conf': conf})
     return results
 
+#if denominator is nonzero, returns numerator divided by
+#denominator, else returns zero
+def divzero(numerator, denominator):
+    if denominator == 0:
+        return 0
+    else:
+        return numerator/denominator
+
 def find_interesting_association_rules(support_count_threshold, target_course, target_grade, max_length=999):
     target_course = str(target_course)
     target_grade = int(target_grade)
@@ -268,9 +276,9 @@ def find_interesting_association_rules(support_count_threshold, target_course, t
     frequent_itemsets = alg.apriori_new(support_count_threshold, apriori_initial_itemsets, transcripts, max_length)
     frequent_itemsets.sort(key=lambda x: x[1], reverse=True)
     frequent_itemsets = [x for x in frequent_itemsets if target_int in x[0]]
-    itemset_supportc_confidences = [x + (x[1] / len(transcripts) / alg.support(x[0] - {target_int}, transcripts),) for x in frequent_itemsets]
-    itemset_supportc_confidence_lifts = [x + (x[2] / alg.support({target_int}, transcripts),) for x in itemset_supportc_confidences]
-    itemset_supportc_confidence_lift_interestingness = [x + (x[3] if x[3] >= 1 else 1.0/x[3],) for x in itemset_supportc_confidence_lifts]
+    itemset_supportc_confidences = [x + (divzero(x[1] / len(transcripts), alg.support(x[0] - {target_int}, transcripts)),) for x in frequent_itemsets]
+    itemset_supportc_confidence_lifts = [x + (divzero(x[2], alg.support({target_int}, transcripts)),) for x in itemset_supportc_confidences]
+    itemset_supportc_confidence_lift_interestingness = [x + (x[3] if x[3] >= 1 else divzero(1.0, x[3]),) for x in itemset_supportc_confidence_lifts]
     itemset_supportc_confidence_lift_interestingness.sort(key=lambda x: x[-1], reverse=True)
     print()
     for x in itemset_supportc_confidence_lift_interestingness:
@@ -289,8 +297,8 @@ def find_difficult_courses(min_attempts):
     results = []
     for couse_code in unique_courses_from_codes([set(a['id'] for a in t) for t in simple_data]):
         transcripts = get_until_course_grade(simple_data, couse_code, [0, 2, 4], True)
-        attempts = 0
-        failures = 0
+        attempts = 0.0
+        failures = 0.0
         for t in transcripts:
             if t[-1]['id'] == couse_code:
                 attempts += 1

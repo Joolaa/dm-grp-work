@@ -1,5 +1,5 @@
 def support_count(x, transactions):
-    count = 0
+    count = 0.0
     for set in transactions:
         count += (x <= set)
     return count
