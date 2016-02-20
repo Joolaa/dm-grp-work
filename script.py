@@ -359,8 +359,8 @@ def find_difficult_courses(min_attempts):
         x[2] = round(x[2], decimals)
         print(x, courseIdToName[int(x[0])])
 
-find_difficult_courses(min_attempts=150)
-print()
+#find_difficult_courses(min_attempts=150)
+#print()
 find_interesting_association_rules(
     support_count_threshold=50,
     target_course=581305,
