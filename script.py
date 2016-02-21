@@ -266,6 +266,15 @@ def data_asked():
         results.append({'premise': fr_itemset, 'conf': conf})
     return results
 
+#if denominator is nonzero, returns numerator divided by
+#denominator, else returns zero
+def divzero(numerator, denominator):
+    if denominator == 0:
+        return 0
+    else:
+        return numerator/denominator
+
+
 def add_never_attempted_courses(support_count_threshold, transcripts):
     for course_code in unique_courses_from_codes([set(a['id'] for a in t) for t in simple_data]):
         support_count = 0
@@ -344,8 +353,8 @@ def find_difficult_courses(min_attempts):
     results = []
     for couse_code in unique_courses_from_codes([set(a['id'] for a in t) for t in simple_data]):
         transcripts = get_until_course_grade(simple_data, couse_code, [0, 2, 4], True)
-        attempts = 0
-        failures = 0
+        attempts = 0.0
+        failures = 0.0
         name = None
         for t in transcripts:
             if t[-1]['id'] == couse_code:
@@ -358,12 +367,12 @@ def find_difficult_courses(min_attempts):
     for x in results:
         x[2] = round(x[2], decimals)
         print(x, courseIdToName[int(x[0])])
+    print()
 
 #find_difficult_courses(min_attempts=150)
-#print()
 find_interesting_association_rules(
     support_count_threshold=50,
-    target_course=581305,
+    target_course=57274,
     target_grade=0,
     max_length=999,
     consider_non_attempted_courses=False
